@@ -1,22 +1,23 @@
 import React from 'react';
-import { View, Text, StyleSheet, Button } from 'react-native';
+import { View, Text, Button, StyleSheet } from 'react-native';
 
-export default function HomeScreen({ navigation }) {
+const HomeScreen = ({ navigation }) => {
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Bienvenido a TouristApp</Text>
-            <Button title="Ver Mapa" onPress={() => navigation.navigate('Map')} />
+            <Text>Welcome to the Home Screen!</Text>
+            {/* Botón para ir a la pantalla del mapa */}
+            <Button title="Go to Map" onPress={() => navigation.navigate('Map')} />
         </View>
     );
-}
+};
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    title: {
-        fontSize: 24,
+        padding: 16,
     },
 });
+
+export default HomeScreen;

@@ -1,52 +1,28 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 
-export default function MapScreen() {
-    const initialRegion = {
-        latitude: -33.4489,  // Coordenadas iniciales
-        longitude: -70.6693,
-        latitudeDelta: 0.0922,
-        longitudeDelta: 0.0421,
-    };
-
-    // Ejemplo de puntos de interés
-    const pointsOfInterest = [
-        {
-            id: 1,
-            title: "Museo Nacional",
-            description: "Museo histórico",
-            latitude: -33.4475,
-            longitude: -70.6736,
-        },
-        {
-            id: 2,
-            title: "Parque Forestal",
-            description: "Parque popular",
-            latitude: -33.4368,
-            longitude: -70.6436,
-        },
-    ];
-
+const MapScreen = () => {
     return (
         <View style={styles.container}>
             <MapView
                 style={styles.map}
-                initialRegion={initialRegion}
-                showsUserLocation={true}
+                initialRegion={{
+                    latitude: -33.4489,
+                    longitude: -70.6693,
+                    latitudeDelta: 0.0922,
+                    longitudeDelta: 0.0421,
+                }}
             >
-                {pointsOfInterest.map(point => (
-                    <Marker
-                        key={point.id}
-                        coordinate={{ latitude: point.latitude, longitude: point.longitude }}
-                        title={point.title}
-                        description={point.description}
-                    />
-                ))}
+                <Marker
+                    coordinate={{ latitude: -33.4489, longitude: -70.6693 }}
+                    title="Ubicación Ejemplo"
+                    description="Esta es una ubicación de ejemplo"
+                />
             </MapView>
         </View>
     );
-}
+};
 
 const styles = StyleSheet.create({
     container: {
@@ -57,3 +33,5 @@ const styles = StyleSheet.create({
         height: '100%',
     },
 });
+
+export default MapScreen;

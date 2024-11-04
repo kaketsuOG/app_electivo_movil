@@ -2,16 +2,17 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 import authService from '../services/authService';
 
-const LoginScreen = ({ navigation }) => {
+const RegisterScreen = ({ navigation }) => {
+    const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
 
-    const handleLogin = async () => {
+    const handleRegister = async () => {
         try {
-            const response = await authService.login(email, password);
-            setMessage('Login exitoso');
-            navigation.navigate('Home');
+            const response = await authService.register(username, email, password);
+            setMessage(response.message);
+            navigation.navigate('Login');
         } catch (error) {
             setMessage(error.response ? error.response.data.error : 'Error de conexión');
         }
@@ -19,7 +20,13 @@ const LoginScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            <Text>Login</Text>
+            <Text>Register</Text>
+            <TextInput
+                style={styles.input}
+                placeholder="Username"
+                value={username}
+                onChangeText={setUsername}
+            />
             <TextInput
                 style={styles.input}
                 placeholder="Email"
@@ -34,10 +41,9 @@ const LoginScreen = ({ navigation }) => {
                 onChangeText={setPassword}
                 secureTextEntry
             />
-            <Button title="Login" onPress={handleLogin} />
+            <Button title="Register" onPress={handleRegister} />
+            <Button title="Go to Login" onPress={() => navigation.navigate('Login')} />
             {message ? <Text>{message}</Text> : null}
-            {/* Botón para ir a la pantalla de registro */}
-            <Button title="Go to Register" onPress={() => navigation.navigate('Register')} />
         </View>
     );
 };
@@ -59,4 +65,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default LoginScreen;
+export default RegisterScreen;
