@@ -11,11 +11,20 @@ CREATE TABLE users (
 );
 
 CREATE TABLE points_of_interest (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  description TEXT,
-  latitude DECIMAL(9, 6) NOT NULL,
-  longitude DECIMAL(9, 6) NOT NULL,
-  rating DECIMAL(2, 1) DEFAULT 0.0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    latitude DECIMAL(9, 6) NOT NULL,
+    longitude DECIMAL(9, 6) NOT NULL,
+    type ENUM('museum', 'park', 'historic_site', 'restaurant', 'other') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE reviews (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    point_id INT NOT NULL,
+    rating INT CHECK(rating BETWEEN 1 AND 5),
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (point_id) REFERENCES points_of_interest(id) ON DELETE CASCADE
 );
