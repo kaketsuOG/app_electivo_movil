@@ -8,6 +8,16 @@ const LoginScreen = ({ navigation }) => {
     const [message, setMessage] = useState('');
 
     const handleLogin = async () => {
+        // Validaciones
+        if (!email || !/\S+@\S+\.\S+/.test(email)) {
+            setMessage('Por favor ingresa un email válido.');
+            return;
+        }
+        if (!password) {
+            setMessage('La contraseña es obligatoria.');
+            return;
+        }
+
         try {
             const response = await authService.login(email, password);
             setMessage('Login exitoso');
@@ -36,7 +46,6 @@ const LoginScreen = ({ navigation }) => {
             />
             <Button title="Login" onPress={handleLogin} />
             {message ? <Text>{message}</Text> : null}
-            {/* Botón para ir a la pantalla de registro */}
             <Button title="Go to Register" onPress={() => navigation.navigate('Register')} />
         </View>
     );

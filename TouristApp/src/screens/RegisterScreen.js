@@ -9,6 +9,20 @@ const RegisterScreen = ({ navigation }) => {
     const [message, setMessage] = useState('');
 
     const handleRegister = async () => {
+        // Validaciones
+        if (!username) {
+            setMessage('El nombre de usuario es obligatorio.');
+            return;
+        }
+        if (!email || !/\S+@\S+\.\S+/.test(email)) {
+            setMessage('Por favor ingresa un email válido.');
+            return;
+        }
+        if (!password || password.length < 6) {
+            setMessage('La contraseña debe tener al menos 6 caracteres.');
+            return;
+        }
+
         try {
             const response = await authService.register(username, email, password);
             setMessage(response.message);
@@ -42,7 +56,6 @@ const RegisterScreen = ({ navigation }) => {
                 secureTextEntry
             />
             <Button title="Register" onPress={handleRegister} />
-            <Button title="Go to Login" onPress={() => navigation.navigate('Login')} />
             {message ? <Text>{message}</Text> : null}
         </View>
     );
