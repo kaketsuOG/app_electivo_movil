@@ -18,6 +18,7 @@ CREATE TABLE points_of_interest (
     longitude DECIMAL(9, 6) NOT NULL,
     type ENUM('museum', 'park', 'historic_site', 'restaurant', 'other') NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    image_url VARCHAR(255),
 );
 
 CREATE TABLE reviews (
