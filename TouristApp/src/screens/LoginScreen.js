@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
 import authService from '../services/authService';
+
 
 const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = useState('');
@@ -28,43 +29,96 @@ const LoginScreen = ({ navigation }) => {
     };
 
     return (
-        <View style={styles.container}>
-            <Text>Login</Text>
-            <TextInput
-                style={styles.input}
-                placeholder="Email"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-            />
-            <Button title="Login" onPress={handleLogin} />
-            {message ? <Text>{message}</Text> : null}
-            <Button title="Go to Register" onPress={() => navigation.navigate('Register')} />
-        </View>
+        <ImageBackground 
+            source={require('../../assets/talca-background.jpg')} // Imagen de fondo que debes añadir en la carpeta assets
+            style={styles.background}
+            resizeMode='cover'  //Con esto la imagen se vera completa sin recortes
+        >
+            <View style={styles.container}>
+                <Text style={styles.title}>Bienvenido a Talca</Text>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Email"
+                    placeholderTextColor="#aaa"
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                />
+                <TextInput
+                    style={styles.input}
+                    placeholder="Contraseña"
+                    placeholderTextColor="#aaa"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry
+                />
+                <TouchableOpacity style={styles.button} onPress={handleLogin}>
+                    <Text style={styles.buttonText}>Iniciar Sesión</Text>
+                </TouchableOpacity>
+                {message ? <Text style={styles.message}>{message}</Text> : null}
+                <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                    <Text style={styles.registerText}>¿No tienes cuenta? Regístrate</Text>
+                </TouchableOpacity>
+            </View>
+        </ImageBackground>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
+    background: {
         flex: 1,
-        alignItems: 'center',
         justifyContent: 'center',
-        padding: 16,
+        alignItems: 'center',
+    },
+    container: {
+        width: '85%',
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        borderRadius: 10,
+        padding: 20,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.8,
+        shadowRadius: 5,
+        elevation: 5,
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 20,
     },
     input: {
         width: '100%',
-        padding: 8,
-        marginVertical: 8,
+        padding: 10,
+        marginVertical: 10,
         borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 4,
+        borderColor: '#ddd',
+        borderRadius: 8,
+        backgroundColor: '#fff',
+    },
+    button: {
+        backgroundColor: '#4A90E2',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        marginTop: 15,
+        width: '100%',
+        alignItems: 'center',
+    },
+    buttonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
+    message: {
+        color: 'green',
+        marginTop: 10,
+        textAlign: 'center',
+    },
+    registerText: {
+        marginTop: 20,
+        color: '#4A90E2',
+        textDecorationLine: 'underline',
     },
 });
 
