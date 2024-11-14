@@ -1,1 +1,5 @@
-# app_electivo_movil
+Descripcion del Proyecto
+
+Objetivos
+
+Wireframes
