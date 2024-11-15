@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Text } from 'react-native';
 import axios from 'axios';
+import { auth } from '../config/firebaseConfig'; // Importación corregida
 
 const AddReview = ({ pointId, onReviewAdded }) => {
     const [rating, setRating] = useState('');
     const [comment, setComment] = useState('');
     const [message, setMessage] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async () => {
         if (!rating || rating < 1 || rating > 5) {
@@ -14,15 +16,45 @@ const AddReview = ({ pointId, onReviewAdded }) => {
         }
 
         try {
+            setIsLoading(true);
+            const user = auth.currentUser;
+            if (!user) {
+                setMessage('Error: Usuario no autenticado');
+                setIsLoading(false);
+                return;
+            }
+
+            const idToken = await user.getIdToken();
+
+            if (!idToken || typeof idToken !== 'string') {
+                console.error('idToken inválido:', idToken);
+                setMessage('Error al obtener el token de autenticación');
+                setIsLoading(false);
+                return;
+            }
+
+            console.log('Enviando datos al backend:', {
+                pointId,
+                rating: parseInt(rating),
+                comment,
+                idToken,
+            });
+
             await axios.post(`http://192.168.1.38:3000/map/points/${pointId}/reviews`, {
                 rating: parseInt(rating),
                 comment,
+                idToken,
             });
+
             setMessage('¡Reseña enviada!');
-            onReviewAdded(); // Recargar las reseñas
+            setRating('');
+            setComment('');
+            onReviewAdded();
         } catch (error) {
-            console.error('Error al enviar reseña:', error);
-            setMessage('Error al enviar reseña');
+            console.error('Error al enviar reseña:', error?.response?.data || error.message);
+            setMessage('Error al enviar la reseña');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -40,9 +72,14 @@ const AddReview = ({ pointId, onReviewAdded }) => {
                 placeholder="Comentario"
                 value={comment}
                 onChangeText={setComment}
+                multiline
             />
-            <Button title="Enviar Reseña" onPress={handleSubmit} />
-            {message ? <Text>{message}</Text> : null}
+            <Button
+                title={isLoading ? 'Enviando...' : 'Enviar Reseña'}
+                onPress={handleSubmit}
+                disabled={isLoading}
+            />
+            {message ? <Text style={styles.message}>{message}</Text> : null}
         </View>
     );
 };
@@ -59,6 +96,11 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 4,
+    },
+    message: {
+        marginTop: 10,
+        textAlign: 'center',
+        color: '#d9534f',
     },
 });
 

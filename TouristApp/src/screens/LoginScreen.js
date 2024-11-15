@@ -1,38 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
-import authService from '../services/authService';
-
+import { AuthContext } from '../context/authContext';
 
 const LoginScreen = ({ navigation }) => {
+    const { login } = useContext(AuthContext);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
 
     const handleLogin = async () => {
-        // Validaciones
-        if (!email || !/\S+@\S+\.\S+/.test(email)) {
-            setMessage('Por favor ingresa un email válido.');
-            return;
-        }
-        if (!password) {
-            setMessage('La contraseña es obligatoria.');
-            return;
-        }
-
         try {
-            const response = await authService.login(email, password);
+            await login(email, password);
             setMessage('Login exitoso');
             navigation.navigate('Home');
         } catch (error) {
-            setMessage(error.response ? error.response.data.error : 'Error de conexión');
+            setMessage('Error al iniciar sesión');
         }
     };
 
     return (
-        <ImageBackground 
-            source={require('../../assets/talca-background.jpg')} // Imagen de fondo que debes añadir en la carpeta assets
+        <ImageBackground
+            source={require('../../assets/talca-background.jpg')}
             style={styles.background}
-            resizeMode='cover'  //Con esto la imagen se vera completa sin recortes
+            resizeMode='cover'
         >
             <View style={styles.container}>
                 <Text style={styles.title}>Bienvenido a Talca</Text>

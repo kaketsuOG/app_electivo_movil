@@ -3,7 +3,9 @@
     "name": "TouristApp",
     "slug": "TouristApp",
     "version": "1.0.0",
+    "newArchEnabled": true,
     "orientation": "portrait",
+    "entryPoint": "./App.js",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
