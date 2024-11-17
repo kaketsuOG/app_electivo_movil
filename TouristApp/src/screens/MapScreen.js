@@ -4,7 +4,7 @@ import MapView, { Marker, Circle } from 'react-native-maps';
 import { FontAwesome } from '@expo/vector-icons';
 import axios from 'axios';
 
-const API_URL = 'http://192.168.1.82:3000';
+const API_URL = 'http://192.168.0.2:3000';
 
 const MapScreen = () => {
     const [points, setPoints] = useState([]);
