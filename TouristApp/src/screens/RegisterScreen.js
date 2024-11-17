@@ -1,9 +1,8 @@
-import React, { useState, useContext } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
-import { AuthContext } from '../context/authContext';
+import authService from '../services/authService';
 
 const RegisterScreen = ({ navigation }) => {
-    const { register } = useContext(AuthContext); // Acceder al método de registro desde el contexto
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -25,17 +24,17 @@ const RegisterScreen = ({ navigation }) => {
         }
 
         try {
-            await register(username, email, password); // Usamos el register del contexto
-            setMessage('Registro exitoso');
+            const response = await authService.register(username, email, password);
+            setMessage(response.message);
             navigation.navigate('Login');
         } catch (error) {
-            setMessage('Error al registrar el usuario');
+            setMessage(error.response ? error.response.data.error : 'Error de conexión');
         }
     };
 
     return (
-        <ImageBackground
-            source={require('../../assets/talca-background.jpg')} // Imagen de fondo
+        <ImageBackground 
+            source={require('../../assets/talca-background.jpg')} // Imagen de fondo que debes añadir en la carpeta assets
             style={styles.background}
             resizeMode='cover'
         >

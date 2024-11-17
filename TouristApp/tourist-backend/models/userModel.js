@@ -1,30 +1,23 @@
-const db = require('../config/firebase'); // Firebase config
-const admin = require("firebase-admin");
+const db = require('../config/db');
 
 const User = {
-    create: async (username, email, password) => {
-        try {
-            const newUser = {
-                username,
-                email,
-                password,
-                created_at: admin.firestore.FieldValue.serverTimestamp(),
-            };
-            const userRef = await db.collection('users').add(newUser);
-            return userRef.id;
-        } catch (err) {
-            throw new Error('Error creating user: ' + err.message);
-        }
+    create: (username, email, password) => {
+        const query = 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)';
+        return new Promise((resolve, reject) => {
+            db.query(query, [username, email, password], (err, results) => {
+                if (err) return reject(err);
+                resolve(results);
+            });
+        });
     },
-    findByEmail: async (email) => {
-        try {
-            const snapshot = await db.collection('users').where('email', '==', email).get();
-            if (snapshot.empty) return null;
-            const userDoc = snapshot.docs[0];
-            return { id: userDoc.id, ...userDoc.data() };
-        } catch (err) {
-            throw new Error('Error finding user: ' + err.message);
-        }
+    findByEmail: (email) => {
+        const query = 'SELECT * FROM users WHERE email = ?';
+        return new Promise((resolve, reject) => {
+            db.query(query, [email], (err, results) => {
+                if (err) return reject(err);
+                resolve(results[0]);
+            });
+        });
     }
 };
 
