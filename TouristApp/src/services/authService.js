@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://192.168.0.2:3000'; // Ajusta esta URL si usas otro host o puerto
+const API_URL = 'http://192.168.1.82:3000'; // Ajusta esta URL si usas otro host o puerto
 
 // Guardar token en el almacenamiento local
 const setToken = async (token) => {
@@ -30,7 +30,7 @@ const getUserProfile = async () => {
 // Actualizar perfil del usuario
 const updateUserProfile = async (data) => {
     const token = await getToken();
-    
+
     let endpoint = '/profile'; // Por defecto, el endpoint para actualizar el perfil completo
 
     if (data.email && !data.username) {
