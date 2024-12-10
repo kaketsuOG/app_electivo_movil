@@ -12,6 +12,23 @@ const ReviewController = {
         }
     },
 
+    getReviewsByUser: async (req, res) => {
+        const { userId } = req.params;
+        console.log('User ID recibido en la solicitud:', userId); // Log del parámetro recibido
+        try {
+            const reviews = await Review.findByUserId(userId);
+            console.log('Reseñas encontradas:', reviews); // Log de las reseñas encontradas
+            if (reviews.length > 0) {
+                res.json(reviews);
+            } else {
+                res.status(404).json({ message: "No reviews found for this user" });
+            }
+        } catch (error) {
+            console.error('Error al obtener las reseñas del usuario:', error);
+            res.status(500).json({ error: 'Error al obtener las reseñas del usuario' });
+        }
+    },
+
     addReview: async (req, res) => {
         const { pointId } = req.params;
         const { rating, comment } = req.body;

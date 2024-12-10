@@ -3,15 +3,16 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView 
 import authService from '../services/authService';
 
 const ProfileScreen = ({ navigation }) => {
-    const [userData, setUserData] = useState({ username: '', email: '' });
+    const [userData, setUserData] = useState({ username: '', email: '', password: '' });
+    const [newData, setNewData] = useState({ username: '', email: '', password: '' });
     const [isEditing, setIsEditing] = useState(false);
-    const [newEmail, setNewEmail] = useState('');
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const data = await authService.getUserProfile(); 
+                const data = await authService.getUserProfile();
                 setUserData(data);
+                setNewData({ username: data.username, email: data.email, password: '' });
             } catch (error) {
                 Alert.alert('Error', 'No se pudieron cargar los datos del usuario.');
             }
@@ -20,34 +21,27 @@ const ProfileScreen = ({ navigation }) => {
     }, []);
 
     const handleSave = async () => {
+        console.log("Datos enviados al servidor:", newData); // Añade esto para verificar los datos
         try {
-            if (!newEmail || newEmail === userData.email) {
-                Alert.alert('Error', 'El email no ha cambiado.');
+            // Validación básica...
+            if (newData.password && newData.password.length < 6) {
+                Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres.');
                 return;
             }
 
-            const updatedData = { email: newEmail };
-
-            // Llamamos al servicio de actualización de perfil
-            await authService.updateUserProfile(updatedData);
-            setUserData((prevData) => ({
-                ...prevData,
-                email: updatedData.email || prevData.email,
-            }));
-            setIsEditing(false);
-            Alert.alert('Éxito', 'Perfil actualizado correctamente.');
+            const response = await authService.updateUserProfile(newData);
+            console.log("Respuesta del servidor:", response); // Verifica qué responde el servidor
+            if (response.error) {
+                Alert.alert('Error', response.error);
+            } else {
+                setUserData(newData);
+                setIsEditing(false);
+                Alert.alert('Éxito', 'Perfil actualizado correctamente.');
+            }
         } catch (error) {
+            console.error("Error al actualizar perfil:", error); // Muestra errores si ocurren
             Alert.alert('Error', 'No se pudo actualizar el perfil.');
         }
-    };
-
-    const handleLogout = () => {
-        authService.logout();
-        navigation.navigate('Login');
-    };
-
-    const handleEditProfile = () => {
-        setIsEditing(true);
     };
 
     return (
@@ -64,34 +58,38 @@ const ProfileScreen = ({ navigation }) => {
                             <Text style={styles.label}>Email:</Text>
                             <Text style={styles.value}>{userData.email}</Text>
                         </View>
-
-                        <View style={styles.buttonContainer}>
-                            <TouchableOpacity style={styles.button} onPress={handleEditProfile}>
-                                <Text style={styles.buttonText}>Editar Perfil</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                                <Text style={styles.logoutText}>Cerrar Sesión</Text>
-                            </TouchableOpacity>
-                        </View>
+                        <TouchableOpacity style={styles.button} onPress={() => setIsEditing(true)}>
+                            <Text style={styles.buttonText}>Editar Perfil</Text>
+                        </TouchableOpacity>
                     </>
                 ) : (
                     <>
                         <TextInput
                             style={styles.input}
+                            placeholder="Nuevo nombre de usuario"
+                            value={newData.username}
+                            onChangeText={(text) => setNewData({ ...newData, username: text })}
+                        />
+                        <TextInput
+                            style={styles.input}
                             placeholder="Nuevo email"
-                            value={newEmail}
-                            onChangeText={setNewEmail}
+                            value={newData.email}
+                            onChangeText={(text) => setNewData({ ...newData, email: text })}
                             keyboardType="email-address"
                         />
-
-                        <View style={styles.buttonContainer}>
-                            <TouchableOpacity style={styles.button} onPress={handleSave}>
-                                <Text style={styles.buttonText}>Guardar Cambios</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.cancelButton} onPress={() => setIsEditing(false)}>
-                                <Text style={styles.cancelText}>Cancelar</Text>
-                            </TouchableOpacity>
-                        </View>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Nueva contraseña"
+                            value={newData.password}
+                            onChangeText={(text) => setNewData({ ...newData, password: text })}
+                            secureTextEntry={true}
+                        />
+                        <TouchableOpacity style={styles.button} onPress={handleSave}>
+                            <Text style={styles.buttonText}>Guardar Cambios</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.cancelButton} onPress={() => setIsEditing(false)}>
+                            <Text style={styles.cancelText}>Cancelar</Text>
+                        </TouchableOpacity>
                     </>
                 )}
             </View>

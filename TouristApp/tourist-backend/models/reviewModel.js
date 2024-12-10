@@ -11,7 +11,12 @@ const Review = {
         });
     },
     findByUserId: (userId) => {
-        const query = 'SELECT * FROM reviews WHERE user_id = ?';
+        const query = `
+            SELECT reviews.*, points_of_interest.name AS placeName
+            FROM reviews
+            JOIN points_of_interest ON reviews.point_id = points_of_interest.id
+            WHERE reviews.user_id = ?;
+        `;
         return new Promise((resolve, reject) => {
             db.query(query, [userId], (err, results) => {
                 if (err) return reject(err);

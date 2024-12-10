@@ -41,10 +41,15 @@ const getUserProfile = async () => {
     if (!token) {
         throw new Error('Token no encontrado. Inicia sesión nuevamente.');
     }
-    const response = await axios.get(`${API_URL}/profile`, {
-        headers: { 'x-access-token': token },
-    });
-    return response.data;
+    try {
+        const response = await axios.get(`${API_URL}/profile`, {
+            headers: { 'x-access-token': token },
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error al obtener el perfil del usuario:', error);
+        throw new Error('Error de conexión al servidor. Por favor verifica tu conexión a internet.');
+    }
 };
 
 // Actualizar perfil del usuario
