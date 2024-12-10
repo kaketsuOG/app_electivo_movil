@@ -1,12 +1,16 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ImageBackground } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const HomeScreen = ({ navigation }) => {
     return (
-        <View style={styles.gradientContainer}>
+        <ImageBackground
+            source={require('../../assets/talcaplaza_background.jpg')}
+            style={styles.background}
+        >
             <View style={styles.container}>
-                <Text style={styles.title}>Bienvenido a la Aplicación</Text>
+                <Text style={styles.title}>Explora Talca</Text>
+                <Text style={styles.subtitle}>Descubre la magia de nuestra ciudad</Text>
 
                 <View style={styles.cardContainer}>
                     <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Map')}>
@@ -21,33 +25,37 @@ const HomeScreen = ({ navigation }) => {
 
                     <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('UserReviews')}>
                         <Icon name="location-outline" size={30} color="#FF9800" />
-                        <Text style={styles.cardText}>Calificaciones de Puntos de Interés</Text>
+                        <Text style={styles.cardText}>Calificación de Puntos de Interés</Text>
                     </TouchableOpacity>
                 </View>
             </View>
-        </View>
+        </ImageBackground>
     );
 };
 
 const styles = StyleSheet.create({
-    gradientContainer: {
+    background: {
         flex: 1,
-        backgroundColor: '#FFCC80',
+        resizeMode: 'cover',
+        justifyContent: 'center',
     },
     container: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
         padding: 16,
-        paddingTop: 50,
-        paddingBottom: 50,
-        backgroundColor: 'linear-gradient(to bottom, #FF8A65, #FFCC80)', // Aplicando el gradiente
+        backgroundColor: 'rgba(0,0,0,0.4)', // Oscurece el fondo para resaltar el contenido
     },
     title: {
-        fontSize: 24,
+        fontSize: 32,
         fontWeight: 'bold',
-        color: '#FFF', // Blanco para resaltar en el fondo
-        marginBottom: 20,
+        color: '#FFF',
+        marginBottom: 10,
+    },
+    subtitle: {
+        fontSize: 18,
+        color: '#FFF',
+        marginBottom: 30,
     },
     cardContainer: {
         width: '100%',
@@ -57,22 +65,18 @@ const styles = StyleSheet.create({
     card: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'flex-start',
         backgroundColor: '#FFF',
         padding: 15,
         marginVertical: 10,
         width: '90%',
-        borderRadius: 10,
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
+        borderRadius: 15,
+        elevation: 5,
     },
     cardText: {
         fontSize: 18,
         color: '#333',
         marginLeft: 15,
+        fontWeight: 'bold',
     },
 });
 

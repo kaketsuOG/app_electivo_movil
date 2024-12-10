@@ -6,7 +6,7 @@ import { isPointWithinRadius } from 'geolib';
 import { FontAwesome } from '@expo/vector-icons'; // Necesario para las estrellas
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://192.168.1.82:3000/poi';
+const API_URL = 'http://192.168.0.4:3000/poi';
 
 const MapScreen = () => {
     const [points, setPoints] = useState([]);

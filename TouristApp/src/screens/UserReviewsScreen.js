@@ -20,7 +20,7 @@ const UserReviewsScreen = () => {
                 const userId = JSON.parse(atob(token.split('.')[1])).id;
                 console.log('UserID obtenido:', userId);
 
-                const response = await axios.get(`http://192.168.1.82:3000/review/user/${userId}`, {
+                const response = await axios.get(`http://192.168.0.4:3000/review/user/${userId}`, {
                     headers: { 'x-access-token': token }
                 });
                 setReviews(response.data);

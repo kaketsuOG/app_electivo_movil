@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://192.168.1.82:3000'; // Ajusta esta URL si usas otro host o puerto
+const API_URL = 'http://192.168.0.4:3000'; // Ajusta esta URL si usas otro host o puerto
 
 // Guardar token en el almacenamiento local
 const setToken = async (token) => {

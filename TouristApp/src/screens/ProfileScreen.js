@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, ImageBackground } from 'react-native';
 import authService from '../services/authService';
 
 const ProfileScreen = ({ navigation }) => {
-    const [userData, setUserData] = useState({ username: '', email: '', password: '' });
+    const [userData, setUserData] = useState({ username: '', email: '' });
     const [newData, setNewData] = useState({ username: '', email: '', password: '' });
     const [isEditing, setIsEditing] = useState(false);
 
@@ -21,16 +21,12 @@ const ProfileScreen = ({ navigation }) => {
     }, []);
 
     const handleSave = async () => {
-        console.log("Datos enviados al servidor:", newData); // Añade esto para verificar los datos
         try {
-            // Validación básica...
             if (newData.password && newData.password.length < 6) {
                 Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres.');
                 return;
             }
-
             const response = await authService.updateUserProfile(newData);
-            console.log("Respuesta del servidor:", response); // Verifica qué responde el servidor
             if (response.error) {
                 Alert.alert('Error', response.error);
             } else {
@@ -39,100 +35,124 @@ const ProfileScreen = ({ navigation }) => {
                 Alert.alert('Éxito', 'Perfil actualizado correctamente.');
             }
         } catch (error) {
-            console.error("Error al actualizar perfil:", error); // Muestra errores si ocurren
             Alert.alert('Error', 'No se pudo actualizar el perfil.');
         }
     };
 
+    const handleLogout = () => {
+        Alert.alert('Cerrar Sesión', '¿Estás seguro de que deseas cerrar sesión?', [
+            { text: 'Cancelar', style: 'cancel' },
+            { text: 'Cerrar Sesión', style: 'destructive', onPress: () => navigation.replace('Login') },
+        ]);
+    };
+
     return (
-        <ScrollView style={styles.container}>
-            <View style={styles.profileContainer}>
-                <Text style={styles.title}>Mi Perfil</Text>
-                {!isEditing ? (
-                    <>
-                        <View style={styles.infoContainer}>
-                            <Text style={styles.label}>Nombre de usuario:</Text>
-                            <Text style={styles.value}>{userData.username}</Text>
-                        </View>
-                        <View style={styles.infoContainer}>
-                            <Text style={styles.label}>Email:</Text>
-                            <Text style={styles.value}>{userData.email}</Text>
-                        </View>
-                        <TouchableOpacity style={styles.button} onPress={() => setIsEditing(true)}>
-                            <Text style={styles.buttonText}>Editar Perfil</Text>
-                        </TouchableOpacity>
-                    </>
-                ) : (
-                    <>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Nuevo nombre de usuario"
-                            value={newData.username}
-                            onChangeText={(text) => setNewData({ ...newData, username: text })}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Nuevo email"
-                            value={newData.email}
-                            onChangeText={(text) => setNewData({ ...newData, email: text })}
-                            keyboardType="email-address"
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Nueva contraseña"
-                            value={newData.password}
-                            onChangeText={(text) => setNewData({ ...newData, password: text })}
-                            secureTextEntry={true}
-                        />
-                        <TouchableOpacity style={styles.button} onPress={handleSave}>
-                            <Text style={styles.buttonText}>Guardar Cambios</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.cancelButton} onPress={() => setIsEditing(false)}>
-                            <Text style={styles.cancelText}>Cancelar</Text>
-                        </TouchableOpacity>
-                    </>
-                )}
+        <ImageBackground
+            source={require('../../assets/talcaarmas_background.jpg')}
+            style={styles.background}
+        >
+            <View style={styles.container}>
+                <View style={styles.card}>
+                    <Text style={styles.title}>Mi Perfil</Text>
+                    {!isEditing ? (
+                        <>
+                            <View style={styles.infoContainer}>
+                                <Text style={styles.label}>Nombre de usuario:</Text>
+                                <Text style={styles.value}>{userData.username}</Text>
+                            </View>
+                            <View style={styles.infoContainer}>
+                                <Text style={styles.label}>Email:</Text>
+                                <Text style={styles.value}>{userData.email}</Text>
+                            </View>
+                            <TouchableOpacity style={styles.button} onPress={() => setIsEditing(true)}>
+                                <Text style={styles.buttonText}>Editar Perfil</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                                <Text style={styles.logoutText}>Cerrar Sesión</Text>
+                            </TouchableOpacity>
+                        </>
+                    ) : (
+                        <>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Nuevo nombre de usuario"
+                                value={newData.username}
+                                onChangeText={(text) => setNewData({ ...newData, username: text })}
+                            />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Nuevo email"
+                                value={newData.email}
+                                onChangeText={(text) => setNewData({ ...newData, email: text })}
+                                keyboardType="email-address"
+                            />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Nueva contraseña"
+                                value={newData.password}
+                                onChangeText={(text) => setNewData({ ...newData, password: text })}
+                                secureTextEntry={true}
+                            />
+                            <TouchableOpacity style={styles.button} onPress={handleSave}>
+                                <Text style={styles.buttonText}>Guardar Cambios</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.cancelButton} onPress={() => setIsEditing(false)}>
+                                <Text style={styles.cancelText}>Cancelar</Text>
+                            </TouchableOpacity>
+                        </>
+                    )}
+                </View>
             </View>
-        </ScrollView>
+        </ImageBackground>
     );
 };
 
 const styles = StyleSheet.create({
+    background: {
+        flex: 1,
+        resizeMode: 'cover',
+        justifyContent: 'center',
+    },
     container: {
         flex: 1,
-        backgroundColor: '#f8f9fa',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 16,
     },
-    profileContainer: {
+    card: {
+        width: '90%',
+        backgroundColor: '#FFF',
+        borderRadius: 15,
         padding: 20,
         alignItems: 'center',
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
     },
     title: {
-        fontSize: 24,
-        fontWeight: '700',
+        fontSize: 26,
+        fontWeight: 'bold',
         color: '#333',
         marginBottom: 20,
     },
     infoContainer: {
-        marginBottom: 20,
         width: '100%',
-        backgroundColor: '#fff',
+        marginBottom: 15,
+        backgroundColor: '#F7F7F7',
         padding: 15,
         borderRadius: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 5,
     },
     label: {
-        fontSize: 16,
+        fontSize: 14,
         color: '#555',
     },
     value: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'bold',
+        color: '#333',
         marginTop: 5,
-        color: '#222',
     },
     input: {
         width: '100%',
@@ -141,23 +161,19 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#ddd',
         borderRadius: 10,
-        backgroundColor: '#fff',
+        backgroundColor: '#FFF',
         fontSize: 16,
-        color: '#333',
-    },
-    buttonContainer: {
-        width: '100%',
-        marginTop: 20,
     },
     button: {
         backgroundColor: '#4CAF50',
         paddingVertical: 12,
         borderRadius: 10,
         alignItems: 'center',
-        marginBottom: 10,
+        marginVertical: 10,
+        width: '100%',
     },
     buttonText: {
-        color: '#fff',
+        color: '#FFF',
         fontSize: 16,
         fontWeight: 'bold',
     },
@@ -166,9 +182,10 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         borderRadius: 10,
         alignItems: 'center',
+        width: '100%',
     },
     logoutText: {
-        color: '#fff',
+        color: '#FFF',
         fontSize: 16,
         fontWeight: 'bold',
     },
