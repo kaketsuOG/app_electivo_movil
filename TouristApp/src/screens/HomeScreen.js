@@ -7,21 +7,21 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.gradientContainer}>
             <View style={styles.container}>
                 <Text style={styles.title}>Bienvenido a la Aplicación</Text>
-                
+
                 <View style={styles.cardContainer}>
                     <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Map')}>
                         <Icon name="map-outline" size={30} color="#4CAF50" />
                         <Text style={styles.cardText}>Mapa</Text>
                     </TouchableOpacity>
-                    
+
                     <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Profile')}>
                         <Icon name="person-outline" size={30} color="#2196F3" />
                         <Text style={styles.cardText}>Perfil</Text>
                     </TouchableOpacity>
-                    
-                    <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('PointsOfInterest')}>
+
+                    <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('UserReviews')}>
                         <Icon name="location-outline" size={30} color="#FF9800" />
-                        <Text style={styles.cardText}>Puntos de Interés</Text>
+                        <Text style={styles.cardText}>Calificaciones de Puntos de Interés</Text>
                     </TouchableOpacity>
                 </View>
             </View>

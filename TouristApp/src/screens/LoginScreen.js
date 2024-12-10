@@ -9,7 +9,6 @@ const LoginScreen = ({ navigation }) => {
     const [message, setMessage] = useState('');
 
     const handleLogin = async () => {
-        // Validaciones
         if (!email || !/\S+@\S+\.\S+/.test(email)) {
             setMessage('Por favor ingresa un email válido.');
             return;
@@ -22,14 +21,14 @@ const LoginScreen = ({ navigation }) => {
         try {
             const response = await authService.login(email, password);
             setMessage('Login exitoso');
-            navigation.navigate('Home');
+            navigation.navigate('Home'); // Redirige al Home después del login
         } catch (error) {
-            setMessage(error.response ? error.response.data.error : 'Error de conexión');
+            setMessage(error.message || 'Error de conexión');
         }
     };
 
     return (
-        <ImageBackground 
+        <ImageBackground
             source={require('../../assets/talca-background.jpg')} // Imagen de fondo que debes añadir en la carpeta assets
             style={styles.background}
             resizeMode='cover'  //Con esto la imagen se vera completa sin recortes

@@ -1,384 +1,289 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, Modal, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, ScrollView, FlatList, Image, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, ScrollView, ActivityIndicator, Modal, TextInput, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard, Platform } from 'react-native';
 import MapView, { Marker, Circle } from 'react-native-maps';
-import { FontAwesome } from '@expo/vector-icons';
 import axios from 'axios';
+import { isPointWithinRadius } from 'geolib';
+import { FontAwesome } from '@expo/vector-icons'; // Necesario para las estrellas
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://192.168.1.82:3000';
+const API_URL = 'http://192.168.1.82:3000/poi';
 
 const MapScreen = () => {
     const [points, setPoints] = useState([]);
-    const [filteredPoints, setFilteredPoints] = useState([]);
-    const [selectedPoint, setSelectedPoint] = useState(null);
-    const [selectedRadius, setSelectedRadius] = useState(null);
-    const [showOptionsModal, setShowOptionsModal] = useState(false);
-    const [showRatingModal, setShowRatingModal] = useState(false);
-    const [showDistanceModal, setShowDistanceModal] = useState(false);
-    const [showInfoModal, setShowInfoModal] = useState(false);
-    const [rating, setRating] = useState(0);
-    const [comment, setComment] = useState('');
     const [selectedType, setSelectedType] = useState('all');
-    const [distanceOptions] = useState([250, 500, 750, 1000, 2000, 5000]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [activeModal, setActiveModal] = useState(false);
+    const [modalContent, setModalContent] = useState('main'); // 'main', 'info', 'distance'
+    const [selectedPoint, setSelectedPoint] = useState(null);
+    const [distanceFilter, setDistanceFilter] = useState('');
+    const [showCircle, setShowCircle] = useState(false);
+    const [originalPoints, setOriginalPoints] = useState([]);
+    const [rating, setRating] = useState(0);
+    const [comment, setComment] = useState('');
 
     useEffect(() => {
-        fetchPoints();
-    }, []);
+        const fetchToken = async () => {
+            try {
+                const token = await AsyncStorage.getItem('userToken');
+                if (!token) {
+                    alert('Tu sesión ha expirado, por favor inicia sesión nuevamente.');
+                    navigation.navigate('Login');
+                } else {
+                    console.log('Token obtenido correctamente:', token);
+                }
+            } catch (error) {
+                console.error('Error obteniendo el token:', error);
+            }
+        };
+
+        fetchToken();
+        fetchPoints(); // Si no depende del token, puede ejecutarse sin problemas
+    }, [selectedType]);
 
     const fetchPoints = async () => {
         try {
             setLoading(true);
             setError(null);
-            const response = await axios.get(`${API_URL}/map/points`);
+            const params = selectedType === 'all' ? {} : { type: selectedType };
+            const response = await axios.get(API_URL, { params });
             setPoints(response.data);
-            setFilteredPoints(response.data);
+            setOriginalPoints(response.data); // Guarda los puntos originales
         } catch (error) {
-            console.error('Error al obtener puntos de interés:', error);
-            setError('Error al cargar los puntos de interés');
+            console.error('Error fetching points of interest:', error);
+            setError('Error loading points of interest');
         } finally {
             setLoading(false);
         }
     };
 
-    const openOptionsModal = (point) => {
+    const handleMarkerPress = (point) => {
         setSelectedPoint(point);
-        setShowOptionsModal(true);
+        setModalContent('main');
+        setActiveModal(true);
     };
 
-    const closeAllModals = () => {
-        setShowOptionsModal(false);
-        setShowInfoModal(false);
-        setShowRatingModal(false);
-        setShowDistanceModal(false);
-        setRating(0);
-        setComment('');
+    const handleInformationPress = () => {
+        setModalContent('info');
     };
 
-    const closeInfoModal = () => {
-        setShowInfoModal(false);
-        setSelectedPoint(null);
+    const handleDistanceFilterPress = () => {
+        setModalContent('distance');
     };
 
-    const closeRatingModal = () => {
-        setShowRatingModal(false);
-        setRating(0);
-        setComment('');
-        setSelectedPoint(null);
+    const handleReviewPress = () => {
+        setModalContent('review');
     };
 
-    const closeDistanceModal = () => {
-        setShowDistanceModal(false);
-        setSelectedPoint(null);
+    const getToken = async () => {
+        try {
+            const token = await AsyncStorage.getItem('userToken');
+            console.log('Token en MapScreen:', token);
+            return token || '';
+        } catch (error) {
+            console.error('Error obteniendo el token:', error);
+            return '';
+        }
     };
 
-    const submitRating = async () => {
-        if (!rating || rating < 1 || rating > 5) {
-            alert('Por favor, selecciona una calificación entre 1 y 5');
+
+    const submitReview = async () => {
+        const token = await getToken(); // Obtén el token del almacenamiento
+        if (!token) {
+            alert('Tu sesión ha expirado. Inicia sesión nuevamente.');
+            navigation.navigate('Login');
             return;
         }
 
         try {
-            await axios.post(`${API_URL}/map/points/${selectedPoint.id}/reviews`, {
-                rating,
-                comment
-            });
-            alert('¡Gracias por tu calificación!');
-            closeRatingModal();
-            fetchPoints(); // Recargar los puntos para actualizar la información
-        } catch (error) {
-            console.error('Error al enviar la calificación:', error);
-            alert('Error al enviar la calificación');
-        }
-    };
-
-    const handleTypeFilter = (type) => {
-        setSelectedType(type);
-        if (type === 'all') {
-            setFilteredPoints(points);
-        } else {
-            const filtered = points.filter(point => point.type === type);
-            setFilteredPoints(filtered);
-        }
-        setSelectedRadius(null); // Resetear el círculo de distancia al cambiar el filtro
-    };
-
-    const calculateDistance = (lat1, lon1, lat2, lon2) => {
-        const R = 6371e3;
-        const φ1 = lat1 * Math.PI / 180;
-        const φ2 = lat2 * Math.PI / 180;
-        const Δφ = (lat2 - lat1) * Math.PI / 180;
-        const Δλ = (lon2 - lon1) * Math.PI / 180;
-
-        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-        return R * c;
-    };
-
-    const handleDistanceFilter = (distance) => {
-        if (selectedPoint) {
-            const nearbyPoints = points.filter(point =>
-                calculateDistance(
-                    selectedPoint.latitude,
-                    selectedPoint.longitude,
-                    point.latitude,
-                    point.longitude
-                ) <= distance
+            const response = await axios.post(
+                `http://192.168.1.82:3000/review/points/${selectedPoint?.id}/reviews`, // Cambia la URL al prefijo correcto
+                { rating, comment },
+                {
+                    headers: { 'x-access-token': token },
+                }
             );
-            setFilteredPoints(nearbyPoints);
-            setSelectedRadius(distance); // Establecer el radio seleccionado
+            alert('Reseña enviada con éxito');
+            setActiveModal(false); // Cierra el modal
+        } catch (error) {
+            console.error('Error al enviar la reseña:', error.response?.data || error.message);
+            alert('Error al enviar la reseña. Intenta nuevamente.');
         }
-        setShowDistanceModal(false); // Cerrar el modal de distancia
     };
 
-    const placeTypes = [
-        { key: 'all', label: 'Todos' },
-        { key: 'museum', label: 'Museo' },
-        { key: 'park', label: 'Parque' },
-        { key: 'historic_site', label: 'Sitio Histórico' },
-        { key: 'restaurant', label: 'Restaurante' },
-        { key: 'other', label: 'Otro' }
-    ];
+    const applyDistanceFilter = () => {
+        if (selectedPoint && distanceFilter) {
+            const filteredPoints = points.filter(point =>
+                isPointWithinRadius(
+                    { latitude: point.latitude, longitude: point.longitude },
+                    { latitude: selectedPoint.latitude, longitude: selectedPoint.longitude },
+                    Number(distanceFilter)
+                )
+            );
+            setPoints(filteredPoints);
+        }
+        setShowCircle(true);
+        setActiveModal(false); // Cierra el modal
+    };
 
-    const renderModals = () => (
-        <>
-            {/* Modal de opciones */}
-            <Modal
-                visible={showOptionsModal}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={closeAllModals}
-            >
-                <TouchableOpacity
-                    style={styles.modalOverlay}
-                    activeOpacity={1}
-                    onPress={closeAllModals}
-                >
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>{selectedPoint?.name}</Text>
-                        <TouchableOpacity
-                            style={styles.optionButton}
-                            onPress={() => setShowInfoModal(true)}
-                        >
-                            <Text style={styles.optionText}>Información</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.optionButton}
-                            onPress={() => setShowRatingModal(true)}
-                        >
-                            <Text style={styles.optionText}>Calificar</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.optionButton}
-                            onPress={() => setShowDistanceModal(true)}
-                        >
-                            <Text style={styles.optionText}>Ver puntos cercanos</Text>
-                        </TouchableOpacity>
-                    </View>
-                </TouchableOpacity>
-            </Modal>
+    const resetFilter = () => {
+        setPoints(originalPoints); // Restaura los puntos originales
+        setShowCircle(false);
+    };
 
-            {/* Modal de información */}
-            <Modal
-                visible={showInfoModal}
-                transparent={true}
-                animationType="slide"
-                onRequestClose={closeInfoModal}
-            >
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>{selectedPoint?.name}</Text>
-                        <ScrollView style={styles.infoScroll}>
-                            <Text style={styles.description}>{selectedPoint?.description}</Text>
-                            {selectedPoint?.image_url && (
-                                <Image
-                                    source={{ uri: selectedPoint.image_url }}
-                                    style={styles.pointImage}
-                                    resizeMode="cover"
-                                />
-                            )}
-                        </ScrollView>
-                        <TouchableOpacity
-                            style={styles.closeButton}
-                            onPress={closeInfoModal}
-                        >
-                            <Text style={styles.closeButtonText}>Cerrar</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+    const closeModal = () => {
+        setActiveModal(false);
+    };
 
-            {/* Modal de calificación */}
-            <Modal
-                visible={showRatingModal}
-                transparent={true}
-                animationType="slide"
-                onRequestClose={closeAllModals}
-            >
-                <KeyboardAvoidingView
-                    style={styles.modalContainer}
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                >
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Califica este lugar</Text>
-                        <View style={styles.starsContainer}>
-                            {[1, 2, 3, 4, 5].map(star => (
-                                <TouchableOpacity
-                                    key={star}
-                                    onPress={() => setRating(star)}
-                                    style={styles.starButton}
-                                >
-                                    <FontAwesome
-                                        name={star <= rating ? "star" : "star-o"}
-                                        size={32}
-                                        color="#FFD700"
-                                    />
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                        <TextInput
-                            style={styles.commentInput}
-                            placeholder="Escribe un comentario..."
-                            value={comment}
-                            onChangeText={setComment}
-                            multiline
-                            numberOfLines={4}
-                        />
-                        <TouchableOpacity
-                            style={styles.submitButton}
-                            onPress={submitRating}
-                        >
-                            <Text style={styles.submitButtonText}>Enviar</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.closeButton}
-                            onPress={closeAllModals}
-                        >
-                            <Text style={styles.closeButtonText}>Cancelar</Text>
-                        </TouchableOpacity>
-                    </View>
-                </KeyboardAvoidingView>
-            </Modal>
+    if (loading) {
+        return <ActivityIndicator size="large" color="#0000ff" />;
+    }
 
-            {/* Modal de distancia */}
-            <Modal
-                visible={showDistanceModal}
-                transparent={true}
-                animationType="slide"
-                onRequestClose={closeDistanceModal}
-            >
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Selecciona la distancia</Text>
-                        <ScrollView>
-                            {distanceOptions.map((dist) => (
-                                <TouchableOpacity
-                                    key={dist}
-                                    style={styles.distanceOption}
-                                    onPress={() => handleDistanceFilter(dist)}
-                                >
-                                    <Text style={styles.distanceText}>{dist} metros</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                        <TouchableOpacity
-                            style={styles.closeButton}
-                            onPress={closeDistanceModal}
-                        >
-                            <Text style={styles.closeButtonText}>Cancelar</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
-        </>
-    );
+    if (error) {
+        return (
+            <View style={styles.centered}>
+                <Text>{error}</Text>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
-            <View style={styles.filterContainer}>
-                <FlatList
-                    horizontal
-                    data={placeTypes}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity
-                            style={[
-                                styles.filterButton,
-                                selectedType === item.key && styles.filterButtonSelected
-                            ]}
-                            onPress={() => handleTypeFilter(item.key)}
-                        >
-                            <Text style={[
-                                styles.filterText,
-                                selectedType === item.key && styles.filterTextSelected
-                            ]}>
-                                {item.label}
-                            </Text>
-                        </TouchableOpacity>
-                    )}
-                    keyExtractor={item => item.key}
-                    showsHorizontalScrollIndicator={false}
-                />
-            </View>
-
+            <ScrollView
+                horizontal
+                contentContainerStyle={styles.filterContainer}
+                style={styles.scrollView}
+                showsHorizontalScrollIndicator={false}
+            >
+                {['all', 'museum', 'park', 'historic_site', 'restaurant', 'other'].map(type => (
+                    <TouchableOpacity key={type} style={styles.filterButton} onPress={() => setSelectedType(type)}>
+                        <Text style={styles.filterText}>{type.toUpperCase()}</Text>
+                    </TouchableOpacity>
+                ))}
+                <TouchableOpacity style={[styles.filterButton, styles.resetButton]} onPress={resetFilter}>
+                    <Text style={styles.filterText}>QUITAR FILTRO</Text>
+                </TouchableOpacity>
+            </ScrollView>
             <MapView
                 style={styles.map}
                 initialRegion={{
-                    latitude: -35.4264,
-                    longitude: -71.6554,
+                    latitude: -35.423244,
+                    longitude: -71.648480,
                     latitudeDelta: 0.0922,
                     longitudeDelta: 0.0421,
                 }}
+                showsUserLocation={true}
+                showsMyLocationButton={true}
             >
-                {/* Renderizar el círculo primero */}
-                {selectedPoint && selectedRadius && (
-                    <Circle
-                        center={{
-                            latitude: parseFloat(selectedPoint.latitude),
-                            longitude: parseFloat(selectedPoint.longitude)
-                        }}
-                        radius={selectedRadius}
-                        strokeColor="rgba(0, 122, 255, 0.5)"
-                        fillColor="rgba(0, 122, 255, 0.2)"
-                        zIndex={1} // Asegurar que el círculo no bloquee el mapa
-                    />
-                )}
-
-                {/* Renderizar los puntos después */}
-                {filteredPoints.map(point => (
+                {points.map(point => (
                     <Marker
                         key={point.id}
-                        coordinate={{
-                            latitude: parseFloat(point.latitude),
-                            longitude: parseFloat(point.longitude)
-                        }}
+                        coordinate={{ latitude: point.latitude, longitude: point.longitude }}
                         title={point.name}
-                        onPress={() => openOptionsModal(point)}
+                        onPress={() => handleMarkerPress(point)}
                     />
                 ))}
+                {showCircle && selectedPoint && (
+                    <Circle
+                        center={{ latitude: selectedPoint.latitude, longitude: selectedPoint.longitude }}
+                        radius={Number(distanceFilter)}
+                        fillColor="rgba(135, 206, 250, 0.5)"
+                        strokeColor="rgba(0, 0, 255, 0.1)"
+                    />
+                )}
             </MapView>
 
-            {loading && (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#0000ff" />
+            {/* Main Modal */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={activeModal}
+                onRequestClose={closeModal}
+            >
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        {modalContent === 'main' ? (
+                            <>
+                                <Text style={styles.modalTitle}>{selectedPoint ? selectedPoint.name : 'Loading...'}</Text>
+                                <TouchableOpacity style={styles.button} onPress={handleInformationPress}>
+                                    <Text style={styles.buttonText}>Información</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.button} onPress={handleDistanceFilterPress}>
+                                    <Text style={styles.buttonText}>Filtrar por distancia</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.button} onPress={handleReviewPress}>
+                                    <Text style={styles.buttonText}>Calificar</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.button} onPress={closeModal}>
+                                    <Text style={styles.buttonText}>Cerrar</Text>
+                                </TouchableOpacity>
+                            </>
+                        ) : modalContent === 'info' ? (
+                            <>
+                                <Text style={styles.modalTitle}>{selectedPoint ? selectedPoint.name : 'Loading...'}</Text>
+                                <Text style={styles.descriptionText}>{selectedPoint ? selectedPoint.description : 'Loading...'}</Text>
+                                <TouchableOpacity style={styles.button} onPress={closeModal}>
+                                    <Text style={styles.buttonText}>Cerrar y Volver</Text>
+                                </TouchableOpacity>
+                            </>
+                        ) : modalContent === 'distance' ? (
+                            <>
+                                <Text style={styles.modalTitle}>Filtrar por distancia</Text>
+                                <Text style={styles.descriptionText}>Introduzca la cantidad de metros:</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    onChangeText={setDistanceFilter}
+                                    value={distanceFilter}
+                                    placeholder="Cantidad de metros"
+                                    keyboardType="numeric"
+                                />
+                                <TouchableOpacity style={styles.button} onPress={applyDistanceFilter}>
+                                    <Text style={styles.buttonText}>Aplicar</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.button} onPress={closeModal}>
+                                    <Text style={styles.buttonText}>Cerrar</Text>
+                                </TouchableOpacity>
+                            </>
+                        ) : modalContent === 'review' ? (
+                            <KeyboardAvoidingView
+                                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                                style={styles.keyboardAvoidingView}
+                            >
+                                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                                    <View style={styles.reviewContainer}>
+                                        <Text style={styles.modalTitle}>Califica este punto</Text>
+                                        <View style={styles.starsContainer}>
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                <TouchableOpacity key={star} onPress={() => setRating(star)}>
+                                                    <FontAwesome
+                                                        name={star <= rating ? "star" : "star-o"}
+                                                        size={32}
+                                                        color={star <= rating ? "#FFD700" : "#C0C0C0"}
+                                                    />
+                                                </TouchableOpacity>
+                                            ))}
+                                        </View>
+                                        <TextInput
+                                            style={[styles.input, styles.commentInput]}
+                                            onChangeText={setComment}
+                                            value={comment}
+                                            placeholder="Añade un comentario (opcional)"
+                                            multiline={true}
+                                            textAlignVertical="top"
+                                        />
+                                        <TouchableOpacity style={styles.button} onPress={submitReview}>
+                                            <Text style={styles.buttonText}>Enviar</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity style={styles.button} onPress={closeModal}>
+                                            <Text style={styles.buttonText}>Cancelar</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </TouchableWithoutFeedback>
+                            </KeyboardAvoidingView>
+                        ) : null}
+                    </View>
                 </View>
-            )}
-
-            {error && (
-                <View style={styles.errorContainer}>
-                    <Text style={styles.errorText}>{error}</Text>
-                    <TouchableOpacity
-                        style={styles.retryButton}
-                        onPress={fetchPoints}
-                    >
-                        <Text style={styles.retryButtonText}>Reintentar</Text>
-                    </TouchableOpacity>
-                </View>
-            )}
-
-            {renderModals()}
+            </Modal>
         </View>
     );
 };
@@ -387,205 +292,142 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
+    scrollView: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 10,
+        height: 40,
+    },
     filterContainer: {
-        paddingVertical: 10,
-        paddingHorizontal: 5,
         backgroundColor: '#fff',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
-        zIndex: 1,
+        paddingVertical: 10,
+        paddingHorizontal: 0,
+        alignItems: 'center',
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 1.41,
+        elevation: 2
     },
     filterButton: {
-        paddingHorizontal: 15,
-        paddingVertical: 8,
-        marginHorizontal: 5,
+        marginHorizontal: 10,
+        paddingHorizontal: 20,
+        paddingVertical: 1,
+        backgroundColor: '#007bff',
         borderRadius: 20,
-        backgroundColor: '#f0f0f0',
-    },
-    filterButtonSelected: {
-        backgroundColor: '#007AFF',
     },
     filterText: {
-        fontSize: 14,
-        color: '#333',
-    },
-    filterTextSelected: {
-        color: '#fff',
+        color: '#ffffff',
+        fontSize: 16,
     },
     map: {
         flex: 1,
-    },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
+        marginTop: 40,
     },
     modalContainer: {
         flex: 1,
         justifyContent: 'center',
+        alignItems: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        paddingHorizontal: 20,
     },
     modalContent: {
         backgroundColor: 'white',
         borderRadius: 20,
         padding: 20,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
-        maxHeight: '80%',
+        alignItems: 'center',
+        width: 300,
+        height: 300,
     },
     modalTitle: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: 'bold',
-        marginBottom: 15,
-        textAlign: 'center',
-        color: '#333',
+        marginBottom: 10,
     },
-    optionButton: {
-        backgroundColor: '#f8f9fa',
-        paddingVertical: 12,
-        paddingHorizontal: 15,
-        borderRadius: 10,
-        marginVertical: 5,
+    descriptionText: {
+        fontSize: 16,
+        marginVertical: 10,
+        textAlign: 'center',
+    },
+    button: {
+        backgroundColor: '#007bff',
+        borderRadius: 20,
+        padding: 10,
+        elevation: 2,
+        marginTop: 10,
+        width: 200,
+        alignItems: 'center'
+    },
+    buttonText: {
+        color: 'white',
+        fontWeight: 'bold',
+        textAlign: 'center'
+    },
+    input: {
         borderWidth: 1,
-        borderColor: '#e9ecef',
+        borderColor: 'gray',
+        width: '80%',
+        padding: 10,
+        marginVertical: 10,
     },
-    optionText: {
-        fontSize: 16,
-        color: '#495057',
-        textAlign: 'center',
+    resetButton: {
+        backgroundColor: '#ff6347', // Un rojo suave para destacar
+        paddingHorizontal: 20,
+        paddingVertical: 5,
+        borderRadius: 20,
+        marginLeft: 10,
     },
-    closeButton: {
-        backgroundColor: '#e9ecef',
-        paddingVertical: 12,
-        paddingHorizontal: 15,
-        borderRadius: 10,
+    input: {
+        borderWidth: 1,
+        borderColor: 'gray',
+        width: '80%',
+        padding: 10,
+        marginVertical: 10,
+    },
+    button: {
+        backgroundColor: '#007bff',
+        borderRadius: 20,
+        padding: 10,
+        elevation: 2,
         marginTop: 10,
+        width: 200,
+        alignItems: 'center',
     },
-    closeButtonText: {
-        fontSize: 16,
-        color: '#495057',
+    buttonText: {
+        color: 'white',
+        fontWeight: 'bold',
         textAlign: 'center',
-        fontWeight: '500',
-    },
-    submitButton: {
-        backgroundColor: '#007AFF',
-        paddingVertical: 12,
-        paddingHorizontal: 15,
-        borderRadius: 10,
-        marginTop: 10,
-    },
-    submitButtonText: {
-        fontSize: 16,
-        color: '#fff',
-        textAlign: 'center',
-        fontWeight: '500',
     },
     starsContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
-        alignItems: 'center',
-        marginVertical: 15,
-    },
-    starButton: {
-        padding: 5,
+        marginVertical: 10,
     },
     commentInput: {
+        height: 100,
+        borderColor: 'gray',
         borderWidth: 1,
-        borderColor: '#ced4da',
         borderRadius: 10,
-        padding: 12,
-        fontSize: 16,
-        color: '#495057',
-        backgroundColor: '#fff',
-        textAlignVertical: 'top',
-        minHeight: 100,
-        marginBottom: 10,
-    },
-    distanceOption: {
-        backgroundColor: '#f8f9fa',
-        paddingVertical: 12,
-        paddingHorizontal: 15,
-        borderRadius: 10,
-        marginVertical: 5,
-        borderWidth: 1,
-        borderColor: '#e9ecef',
-    },
-    distanceText: {
-        fontSize: 16,
-        color: '#495057',
-        textAlign: 'center',
-    },
-    infoScroll: {
-        maxHeight: 400,
-        marginBottom: 10,
-    },
-    description: {
-        fontSize: 16,
-        color: '#495057',
-        marginBottom: 15,
-        lineHeight: 24,
-    },
-    pointImage: {
+        padding: 10,
         width: '100%',
-        height: 200,
-        borderRadius: 10,
-        marginBottom: 15,
+        marginBottom: 10,
+        backgroundColor: '#f9f9f9',
     },
-    loadingContainer: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+    keyboardAvoidingView: {
+        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.7)',
     },
-    errorContainer: {
-        position: 'absolute',
-        top: '50%',
-        left: 20,
-        right: 20,
-        backgroundColor: '#fff',
+    reviewContainer: {
+        backgroundColor: 'white',
+        borderRadius: 20,
         padding: 20,
-        borderRadius: 10,
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
-    },
-    errorText: {
-        fontSize: 16,
-        color: '#dc3545',
-        marginBottom: 10,
-        textAlign: 'center',
-    },
-    retryButton: {
-        backgroundColor: '#007AFF',
-        paddingVertical: 8,
-        paddingHorizontal: 20,
-        borderRadius: 8,
-    },
-    retryButtonText: {
-        color: '#fff',
-        fontSize: 14,
-        fontWeight: '500',
+        width: 300,
     },
 });
 
