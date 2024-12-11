@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://192.168.0.4:8000';  // Ajusta esto según la configuración de tu servidor
+const BASE_URL = 'http://192.168.1.82:8000';  // Ajusta esto según la configuración de tu servidor
 
 export const fetchPointsOfInterest = async () => {
     try {

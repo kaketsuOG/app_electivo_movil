@@ -6,7 +6,7 @@ import { isPointWithinRadius } from 'geolib';
 import { FontAwesome } from '@expo/vector-icons'; // Necesario para las estrellas
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://192.168.0.4:3000/poi';
+const API_URL = 'http://192.168.1.82:3000/poi';
 
 const MapScreen = () => {
     const [points, setPoints] = useState([]);
@@ -239,6 +239,9 @@ const MapScreen = () => {
                                 />
                                 <TouchableOpacity style={styles.button} onPress={applyDistanceFilter}>
                                     <Text style={styles.buttonText}>Aplicar</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity style={styles.button} onPress={resetFilter}>
+                                    <Text style={styles.buttonText}>Eliminar filtro</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity style={styles.button} onPress={closeModal}>
                                     <Text style={styles.buttonText}>Cerrar</Text>
